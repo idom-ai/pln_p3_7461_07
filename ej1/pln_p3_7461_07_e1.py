@@ -8,31 +8,40 @@ pln_p3_7461_07_e1.py - EJERCICIO 1: MLP y RNN con embeddings estáticos (GloVe y
   4. Muestra el F1 macro en test (media de los 3 folds) y guarda en resultados/resultados_e1.json
      las pérdidas de cada época y las predicciones en test (para visualizar_resultados.py).
 
-Antes de ejecutarlo hay que descomprimir los .zip de CORPUS dentro de data/ (en la raíz).
+Los corpus se descomprimen solos (de data/*.zip a corpus/) la primera vez que se ejecuta.
 La primera vez se descargan los embeddings (~400 MB GloVe y ~1,6 GB Word2Vec) en ~/gensim-data.
 """
 import json
 import os
 import sys
+import zipfile
 
 import gensim.downloader
 import numpy as np
 from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
 
-# Carpeta raíz de la práctica (la de arriba): ahí están P2/, data/ y resultados/
+# Carpeta raíz de la práctica (la de arriba): ahí están P2/, classifiers.py, data/, corpus/ y resultados/
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, RAIZ)   # para poder importar P2/
+sys.path.insert(0, RAIZ)   # para poder importar P2/ y classifiers.py
 
 from arquitecturas.mlp import MLP
 from arquitecturas.rnn import RNN
 from embeddings import Vectorizador, matriz_embeddings, tokenizar
-from torch_classifier import EmbeddingClassifier
+from classifiers import EmbeddingClassifier
 from P2.corpus_loader import CorpusLoader
 from P2.json_corpus_reader import JsonCorpusReader
 
-CORPUS = {'Gift_Cards': os.path.join(RAIZ, 'data', 'corpus_pos54_neu32'),
-          'All_Beauty': os.path.join(RAIZ, 'data', 'corpus_All_Beauty_pos54_neu32')}
+# Los corpus están comprimidos en data/ (versionados con DVC). La primera vez se descomprimen en
+# corpus/, fuera de data/, para que DVC no los vea como un cambio de los datos.
+CARPETA_CORPUS = os.path.join(RAIZ, 'corpus')
+ZIPS = {'Gift_Cards': 'corpus_pos54_neu32', 'All_Beauty': 'corpus_All_Beauty_pos54_neu32'}
+for nombre in ZIPS.values():
+    if not os.path.isdir(os.path.join(CARPETA_CORPUS, nombre)):
+        print(f'Descomprimiendo data/{nombre}.zip en corpus/...')
+        with zipfile.ZipFile(os.path.join(RAIZ, 'data', nombre + '.zip')) as z:
+            z.extractall(CARPETA_CORPUS)
+CORPUS = {corpus: os.path.join(CARPETA_CORPUS, nombre) for corpus, nombre in ZIPS.items()}
 RESULTADOS = os.path.join(RAIZ, 'resultados')
 EMBEDDINGS = {'GloVe': 'glove-wiki-gigaword-300',        # los dos de 300 dimensiones
               'Word2Vec': 'word2vec-google-news-300'}
