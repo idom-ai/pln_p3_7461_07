@@ -19,6 +19,7 @@ dependencies = [
   "nltk>=3.10.4",
   "gensim>=4.4.0",
   "skorch>=1.4.0",
+  "transformers>=5.23.0",
 ]
 
 [tool.uv.sources]
